@@ -58,6 +58,7 @@ base_seleccion <- base %>%
     participa_binario,                      # participa / no participa
     P301A,                                  # nivel educativo
     P207,                                   # sexo
+    P208A,                                  # edad — se usa para filtro (≥18) y grupo etario
     ESTRATO,                                # estrato (urbano/rural)
     POBREZA,                                # condición de pobreza
     FACTOR07                                # factor de expansión
@@ -197,3 +198,73 @@ ggsave("03_outputs/acondicionar/figura1_reporte_nas.png",
 write_csv(reporte_nas, "03_outputs/acondicionar/tabla1_reporte_nas.csv")
 
 cat("\n✓ Reporte de NAs exportado en 03_outputs/acondicionar/\n")
+
+# =============================================================================
+# 5. DECISIÓN SOBRE VALORES PERDIDOS Y FILTRO DE EDAD
+# -----------------------------------------------------------------------------
+# Decisión sobre NAs en educacion:
+#   Solo educacion presenta NAs (225 casos, 0.22% del total).
+#   Se aplica listwise deletion (eliminación de casos con NA).
+#   Justificación:
+#   a) El porcentaje es estadísticamente insignificante (0.22%)
+#   b) No hay evidencia de un patrón sistemático que sugiera MNAR:
+#      los NAs en nivel educativo en la ENAHO suelen corresponder a
+#      errores de captura o casos donde el informante no pudo responder,
+#      no a un grupo específico que deliberadamente oculta su educación
+#   c) La imputación múltiple no se justifica con menos del 1% de ausencias
+#      (van Buuren, 2018)
+#   Conclusión: los NAs son plausiblemente MCAR — su eliminación no
+#   introduce sesgo relevante en el análisis.
+# -----------------------------------------------------------------------------
+# Decisión sobre filtro de edad:
+#   Se restringe el análisis a personas de 18 años o más.
+#   Justificación: la participación ciudadana en organizaciones formales
+#   es un derecho que en el Perú se ejerce a partir de la mayoría de edad.
+#   Incluir menores distorsionaría el análisis porque su participación
+#   en organizaciones responde a lógicas distintas (APAFA, clubes escolares)
+# =============================================================================
+
+n_antes <- nrow(base_tipada)
+
+base_acondicionada <- base_tipada %>%
+  filter(!is.na(educacion)) %>%   # eliminar NAs en educacion
+  filter(P208A >= 18)             # restricción a mayores de edad
+
+# Nota: P208A (edad) se conserva solo para el filtro, no se incluye
+# en la base final porque no es una variable de análisis
+# Se agrega edad recodificada como variable de control adicional
+base_acondicionada <- base_acondicionada %>%
+  mutate(
+    edad_grupo = case_when(
+      P208A >= 18 & P208A <= 29 ~ "18-29",
+      P208A >= 30 & P208A <= 44 ~ "30-44",
+      P208A >= 45 & P208A <= 59 ~ "45-59",
+      P208A >= 60               ~ "60 o más"
+    ),
+    edad_grupo = factor(edad_grupo,
+                        levels = c("18-29", "30-44", "45-59", "60 o más"))
+  ) %>%
+  select(-P208A)  # eliminar edad continua, conservar solo grupo etario
+
+n_despues <- nrow(base_acondicionada)
+
+cat("=== DECISIONES DE FILTRADO ===\n")
+cat(sprintf("Filas antes:  %d\n", n_antes))
+cat(sprintf("Filas después: %d\n", n_despues))
+cat(sprintf("Casos eliminados: %d\n", n_antes - n_despues))
+cat(sprintf("  — Por NAs en educacion: 225\n"))
+cat(sprintf("  — Por ser menores de 18: %d\n",
+            n_antes - n_despues - 225))
+cat(sprintf("Porcentaje retenido: %.1f%%\n",
+            n_despues / n_antes * 100))
+
+# =============================================================================
+# 6. EXPORTAR BASE ACONDICIONADA
+# =============================================================================
+
+write_csv(base_acondicionada,
+          "01_datos/procesados/base_acondicionada.csv")
+
+cat("\n✓ Base acondicionada exportada.\n")
+cat(sprintf("  Observaciones: %d\n", nrow(base_acondicionada)))
+cat(sprintf("  Variables: %d\n", ncol(base_acondicionada)))
