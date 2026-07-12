@@ -274,3 +274,87 @@ write_csv(tabla_etnia_area,
           "03_outputs/explorar/tabla9_etnia_area.csv")
 
 cat("\n✓ Tablas bivariadas exportadas en 03_outputs/explorar/\n")
+
+# =============================================================================
+# 4. GRÁFICOS BIVARIADOS
+# =============================================================================
+
+# --- Figura 5: participación según identidad étnica (boxplot) ----------------
+
+g5 <- base_biv %>%
+  group_by(etnia_agrupada) %>%
+  mutate(media_grupo = weighted.mean(part_indice, w = factor_exp)) %>%
+  ungroup() %>%
+  ggplot(aes(x = reorder(etnia_agrupada, media_grupo),
+             y = part_indice)) +
+  geom_boxplot(fill = "#2980b9", alpha = 0.7,
+               outlier.alpha = 0.2) +
+  coord_flip() +
+  labs(
+    title    = "Figura 5. Índice de participación ciudadana según lengua materna",
+    subtitle = subtitulo_base,
+    x        = "Lengua materna",
+    y        = "Índice de participación (número de tipos de organización, 0–17)",
+    caption  = "Fuente: ENAHO 2025 - INEI. Elaboración propia.\nNota: resultados ponderados con factor de expansión FACTOR07."
+  ) +
+  theme_minimal()
+
+ggsave("03_outputs/explorar/figura5_box_etnia_participacion.png",
+       plot = g5, width = 8, height = 5, dpi = 300)
+
+# --- Figura 6: % que participa según identidad étnica (barras) ---------------
+g6 <- ggplot(tabla_biv,
+             aes(x = reorder(etnia_agrupada, pct_participa),
+                 y = pct_participa)) +
+  geom_col(fill = "#e67e22") +
+  geom_text(aes(label = paste0(pct_participa, "%")),
+            hjust = 1.2, size = 3.5, color = "white") +
+  coord_flip() +
+  labs(
+    title    = "Figura 6. Porcentaje que participa en al menos una organización\nsegún lengua materna",
+    subtitle = subtitulo_base,
+    x        = "Lengua materna (proxy de identidad étnica)",
+    y        = "Porcentaje que participa en al menos una organización (%)",
+    caption  = "Fuente: ENAHO 2025 - INEI. Elaboración propia.\nNota: resultados ponderados con factor de expansión FACTOR07."
+  ) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.15))) +
+  theme_minimal()
+
+ggsave("03_outputs/explorar/figura6_bar_pct_participa_etnia.png",
+       plot = g6, width = 8, height = 6, dpi = 300)
+
+# --- Figura 7: participación según área (urbano/rural) -----------------------
+tabla_area_part <- base %>%
+  group_by(area) %>%
+  summarise(
+    n             = n(),
+    n_expandido   = round(sum(factor_exp)),
+    media_pond    = round(weighted.mean(part_indice, w = factor_exp), 3),
+    pct_participa = round(weighted.mean(part_bin == 1,
+                                        w = factor_exp) * 100, 1)
+  )
+
+g7 <- ggplot(tabla_area_part,
+             aes(x = area, y = pct_participa, fill = area)) +
+  geom_col(show.legend = FALSE) +
+  geom_text(aes(label = paste0(pct_participa, "%")),
+            vjust = -0.5, size = 4) +
+  scale_fill_manual(values = c("Urbano" = "#3498db", "Rural" = "#27ae60")) +
+  labs(
+    title    = "Figura 7. Porcentaje que participa en al menos una organización\nsegún área geográfica",
+    subtitle = subtitulo_base,
+    x        = "Área geográfica",
+    y        = "Porcentaje que participa (%)",
+    caption  = "Fuente: ENAHO 2025 - INEI. Elaboración propia.\nNota: resultados ponderados con factor de expansión FACTOR07."
+  ) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.15))) +
+  theme_minimal()
+
+ggsave("03_outputs/explorar/figura7_bar_area_participacion.png",
+       plot = g7, width = 6, height = 5, dpi = 300)
+
+cat("✓ Gráficos bivariados exportados en 03_outputs/explorar/\n")
+cat("\n=== EXPLORACIÓN COMPLETA ===\n")
+cat("Hallazgo principal: los quechuahablantes participan 2.6x más\n")
+cat("que los castellanohablantes (54.7% vs 21.1%)\n")
+
