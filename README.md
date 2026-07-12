@@ -27,6 +27,7 @@ Los hablantes de lenguas indígenas (quechua, aimara y otras lenguas nativas) pa
 
 ## Estructura del repositorio
 
+```
 PoncedeLeon_MariaAlejandra_Prado_Vania/
 │
 ├── 01_datos/
@@ -55,6 +56,7 @@ PoncedeLeon_MariaAlejandra_Prado_Vania/
 ├── renv.lock                ← Versiones de paquetes (reproducibilidad)
 └── README.md                ← Este archivo
 
+```
 ---
 
 ## Reproducibilidad
@@ -81,3 +83,69 @@ source("02_scripts/05_documentar.R")
 ```
 
 **Paquetes utilizados:** `tidyverse`, `haven`, `skimr`, `quantreg`
+
+---
+
+## 1. EXTRAER
+
+**Script:** `02_scripts/01_extraer.R`  
+**Documentación técnica:** `04_docs/ficha_tecnica_ENAHO.md`
+
+Se utilizaron 4 módulos de la ENAHO 2025, descargados del portal oficial del INEI:
+
+| Módulo | Archivo | Variables utilizadas |
+|--------|---------|---------------------|
+| Sumaria | `Sumaria-2025-12g.sav` | POBREZA, ESTRATO, FACTOR07 |
+| 300 — Educación | `Enaho01A-2025-300_Educacion.sav` | P300A (lengua materna), P301A, P207, P208A |
+| 800A — Gobernabilidad | `Enaho01-2025-800A.sav` | P801_1 a P801_17 (participación en organizaciones) |
+| 800B — Gobernabilidad | `Enaho01-2025-800B.sav` | P803, P804, P805 (detalle individual) |
+
+**Decisiones metodológicas:**
+- Se usa **lengua materna (P300A)** como proxy de identidad étnica en lugar de la pregunta de autoidentificación directa. Justificación: la autoidentificación directa está sujeta a sesgo por racismo estructural — en contextos de discriminación, las personas tienden a declararse "mestizas" ocultando su identidad indígena (MNAR). La lengua materna es un hecho biográfico menos susceptible a ese sesgo.
+- El módulo 800B tiene múltiples registros por persona (hasta 5). Se conservó el registro con el **rol más activo** (menor valor en P804: 1=Dirigente > 2=Miembro activo > 3=Miembro no activo > 4=Otro).
+- La unión se hizo con **left_join** para conservar a todas las personas del módulo 300, incluso quienes no participan en ninguna organización (no tienen registro en 800B).
+- Resultado: **104,446 personas**, sin duplicaciones en el merge.
+
+---
+
+## 2. GESTIONAR
+
+**Script:** `02_scripts/00_estructura.R` (ejecutado al inicio)
+
+- Estructura de carpetas organizada en 4 directorios principales
+- Control de versiones con Git y GitHub desde el inicio del proyecto
+- Gestión de paquetes con `renv` para garantizar reproducibilidad
+- Datos originales excluidos del versionamiento (`.gitignore`) por peso y restricciones de redistribución del INEI
+- Commits descriptivos por cada decisión metodológica (ver historial en GitHub)
+
+---
+
+## 3. ACONDICIONAR
+
+**Script:** `02_scripts/02_acondicionar.R`
+
+A partir de la base unida (104,446 personas de todas las edades), se aplicaron los siguientes pasos:
+
+**Selección de variables:** se seleccionaron 6 variables analíticas con justificación teórica explícita para cada control:
+
+| Variable | Rol | Justificación |
+|----------|-----|---------------|
+| `etnia` | Independiente principal | Proxy de identidad étnica (lengua materna) |
+| `part_indice` | Dependiente | Índice de participación en organizaciones (0–17) |
+| `educacion` | Control | La educación aumenta la participación cívica independientemente de la etnia |
+| `sexo` | Control | Diferencias de género en participación documentadas en el Perú |
+| `area` | Control | Participación comunal estructuralmente distinta en contextos rurales vs. urbanos |
+| `pobreza` | Control | Puede confundir la relación entre etnia y participación |
+| `factor_exp` | Ponderación | Obligatorio para análisis representativo a nivel nacional |
+
+**Corrección de tipos:** variables categóricas convertidas de numérico a factor con etiquetas del diccionario ENAHO.
+
+**Gestión de NAs:** solo `educacion` presentó valores perdidos (225 casos, 0.22%). Se aplicó listwise deletion porque:
+- El porcentaje es estadísticamente insignificante (< 1%)
+- No hay evidencia de patrón sistemático (plausiblemente MCAR)
+- La imputación múltiple no se justifica con menos del 1% de ausencias (van Buuren, 2018)
+
+**Filtro de edad:** se restringió el análisis a **personas de 18 años o más** porque la participación ciudadana en organizaciones formales es un derecho que se ejerce a partir de la mayoría de edad en el Perú.
+
+**Resultado:** base acondicionada con **76,222 observaciones** (73% del total).
+
