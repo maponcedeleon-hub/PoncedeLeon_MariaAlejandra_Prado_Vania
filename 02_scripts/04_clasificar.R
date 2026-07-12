@@ -197,3 +197,125 @@ ggsave("03_outputs/clasificar/figura9_dist_nivel_participacion.png",
        plot = g_nivel, width = 7, height = 5, dpi = 300)
 
 cat("✓ Variable 'nivel_participacion' creada y exportada.\n")
+
+# =============================================================================
+# 3. VARIABLE: participa_comunal (dummy binaria)
+# =============================================================================
+
+# =============================================================================
+# 3. VARIABLE: participa_comunal (dummy binaria)
+# =============================================================================
+
+# Recuperar variables P801 comunales de la base unida
+base_unida <- read_csv("01_datos/procesados/base_unida.csv",
+                       show_col_types = FALSE)
+
+# Unir y crear variable en un solo paso para evitar pérdida de columnas
+base <- base %>%
+  left_join(
+    base_unida %>%
+      select(CONGLOME, VIVIENDA, HOGAR, CODPERSO,
+             P801_4,   # junta vecinal
+             P801_5,   # ronda campesina
+             P801_14,  # presupuesto participativo
+             P801_16), # comunidad campesina
+    by = c("CONGLOME", "VIVIENDA", "HOGAR", "CODPERSO")
+  ) %>%
+  mutate(
+    participa_comunal = if_else(
+      P801_4 == 1 | P801_5 == 1 | P801_14 == 1 | P801_16 == 1,
+      1L, 0L
+    ),
+    participa_comunal = replace_na(participa_comunal, 0L)
+  )
+
+dist_comunal <- base %>%
+  group_by(participa_comunal) %>%
+  summarise(
+    n           = n(),
+    n_expandido = round(sum(factor_exp))
+  ) %>%
+  mutate(
+    pct   = round(n_expandido / sum(n_expandido) * 100, 1),
+    label = if_else(participa_comunal == 1,
+                    "Participa en org. comunal",
+                    "No participa en org. comunal")
+  )
+
+cat("\n=== Variable 3: participa_comunal ===\n")
+cat("Regla: 1 = participa en junta vecinal, ronda campesina,\n")
+cat("       presupuesto participativo o comunidad campesina\n")
+cat("Justificación: organizaciones de base territorial vinculadas\n")
+cat("a ciudadanía local y formas tradicionales de organización indígena\n\n")
+print(dist_comunal)
+write_csv(dist_comunal,
+          "03_outputs/clasificar/tabla_dist_participa_comunal.csv")
+
+# =============================================================================
+# 4. TABLA CRUZADA: indigena × nivel_participacion (ponderada)
+# =============================================================================
+
+tabla_cruzada <- base %>%
+  filter(!is.na(indigena_label)) %>%
+  group_by(indigena_label, nivel_participacion) %>%
+  summarise(
+    n           = n(),
+    n_expandido = round(sum(factor_exp)),
+    .groups     = "drop"
+  ) %>%
+  group_by(indigena_label) %>%
+  mutate(pct = round(n_expandido / sum(n_expandido) * 100, 1)) %>%
+  ungroup()
+
+cat("\n=== Tabla cruzada: indigena × nivel_participacion ===\n")
+print(tabla_cruzada)
+write_csv(tabla_cruzada,
+          "03_outputs/clasificar/tabla_cruzada_indigena_participacion.csv")
+
+# Gráfico tabla cruzada
+g_cruzada <- ggplot(tabla_cruzada,
+                    aes(x = nivel_participacion, y = pct,
+                        fill = indigena_label)) +
+  geom_col(position = "dodge") +
+  geom_text(aes(label = paste0(pct, "%")),
+            position = position_dodge(width = 0.9),
+            vjust = -0.5, size = 3.2) +
+  scale_fill_manual(values = c("No indígena" = "#2980b9",
+                               "Indígena"    = "#e67e22")) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.2))) +
+  labs(
+    title    = "Figura 10. Nivel de participación ciudadana según identidad étnica",
+    subtitle = sprintf("Comparación ponderada — ENAHO 2025 (n muestral = %s)",
+                       format(nrow(base %>% filter(!is.na(indigena_label))),
+                              big.mark = ",")),
+    x        = "Nivel de participación ciudadana",
+    y        = "Porcentaje dentro de cada grupo étnico (%)",
+    fill     = "Identidad étnica",
+    caption  = "Fuente: ENAHO 2025 - INEI. Elaboración propia.\nNota: resultados ponderados con factor de expansión FACTOR07."
+  ) +
+  theme_minimal()
+
+ggsave("03_outputs/clasificar/figura10_cruzada_indigena_participacion.png",
+       plot = g_cruzada, width = 8, height = 5, dpi = 300)
+
+# =============================================================================
+# 5. EXPORTAR BASE FINAL
+# =============================================================================
+
+base_final <- base %>%
+  select(CONGLOME, VIVIENDA, HOGAR, CODPERSO,
+         etnia, indigena, indigena_label,
+         part_indice, part_bin,
+         nivel_participacion, participa_comunal,
+         educacion, sexo, area, pobreza, edad_grupo,
+         factor_exp)
+
+write_csv(base_final, "01_datos/procesados/base_final.csv")
+
+cat("\n✓ Base final exportada.\n")
+cat(sprintf("  Observaciones: %d\n", nrow(base_final)))
+cat(sprintf("  Variables: %d\n", ncol(base_final)))
+cat("\nResumen de variables analíticas creadas:\n")
+cat("  1. indigena: dummy (0=No indígena, 1=Indígena, NA=Otra)\n")
+cat("  2. nivel_participacion: ordinal (Ninguna/Baja/Alta)\n")
+cat("  3. participa_comunal: dummy (0=No, 1=Sí)\n")
