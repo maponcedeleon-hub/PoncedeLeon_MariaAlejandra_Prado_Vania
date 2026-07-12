@@ -215,3 +215,62 @@ ggsave("03_outputs/explorar/figura4_dist_educacion.png",
 
 cat("✓ Gráficos univariados exportados en 03_outputs/explorar/\n")
 
+# =============================================================================
+# 3. ANÁLISIS BIVARIADO: etnia × participación ciudadana
+# Pregunta exploratoria: ¿varía la participación ciudadana según la
+# identidad étnica (lengua materna)?
+# Decisión: se usa la agrupación de etnia en 5 categorías para el análisis
+# bivariado (igual que en Figura 3) para facilitar la comparación.
+# Todos los estadísticos están ponderados con factor de expansión.
+# =============================================================================
+
+base_biv <- base %>%
+  mutate(
+    etnia_agrupada = case_when(
+      etnia == "Castellano"        ~ "Castellano",
+      etnia == "Quechua"           ~ "Quechua",
+      etnia == "Aimara"            ~ "Aimara",
+      etnia %in% c("Otra lengua nativa", "Ashaninka", "Awajun/Aguaruna",
+                   "Shipibo-Konibo", "Shawi/Chayahuita", "Achuar",
+                   "Matsigenka/Machiguenga") ~ "Otras lenguas nativas",
+      TRUE ~ "Otra"
+    ),
+    etnia_agrupada = factor(etnia_agrupada,
+                            levels = c("Castellano", "Quechua", "Aimara",
+                                       "Otras lenguas nativas", "Otra"))
+  )
+
+# Tabla bivariada ponderada
+tabla_biv <- base_biv %>%
+  group_by(etnia_agrupada) %>%
+  summarise(
+    n                = n(),
+    n_expandido      = round(sum(factor_exp)),
+    media_part_pond  = round(weighted.mean(part_indice,
+                                           w = factor_exp), 3),
+    pct_participa    = round(weighted.mean(part_bin == 1,
+                                           w = factor_exp) * 100, 1)
+  ) %>%
+  arrange(desc(media_part_pond))
+
+cat("\n=== ANÁLISIS BIVARIADO: etnia × participación ===\n")
+cat("Tabla 8. Participación ciudadana según lengua materna (ponderada)\n")
+print(tabla_biv)
+write_csv(tabla_biv,
+          "03_outputs/explorar/tabla8_biv_etnia_participacion.csv")
+
+# Tabla bivariada: etnia × área (contexto de la participación)
+tabla_etnia_area <- base_biv %>%
+  group_by(etnia_agrupada, area) %>%
+  summarise(
+    n           = n(),
+    n_expandido = round(sum(factor_exp)),
+    .groups     = "drop"
+  ) %>%
+  group_by(etnia_agrupada) %>%
+  mutate(pct = round(n_expandido / sum(n_expandido) * 100, 1))
+
+write_csv(tabla_etnia_area,
+          "03_outputs/explorar/tabla9_etnia_area.csv")
+
+cat("\n✓ Tablas bivariadas exportadas en 03_outputs/explorar/\n")
