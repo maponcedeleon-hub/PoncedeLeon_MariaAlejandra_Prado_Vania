@@ -1,0 +1,18 @@
+variable,etiqueta,tipo,rol,valores_posibles,fuente
+CONGLOME,Código de conglomerado,ID (texto),Identificador,Texto (6 dígitos),ENAHO 2025 - INEI (llaves de identificación)
+VIVIENDA,Código de vivienda,ID (texto),Identificador,Texto (3 dígitos),ENAHO 2025 - INEI (llaves de identificación)
+HOGAR,Código de hogar,ID (numérico),Identificador,Numérico,ENAHO 2025 - INEI (llaves de identificación)
+CODPERSO,Código de persona,ID (texto),Identificador,Texto (2 dígitos),ENAHO 2025 - INEI (llaves de identificación)
+etnia,Lengua materna (proxy de identidad étnica),Categórica nominal,Independiente principal,Castellano / Quechua / Aimara / Otra lengua nativa / Ashaninka / Awajun-Aguaruna / Shipibo-Konibo / Shawi-Chayahuita / Matsigenka-Machiguenga / Achuar / Otra,"ENAHO 2025 - Módulo 300, variable P300A (lengua materna)"
+indigena,Identidad indígena binaria (dummy),Dummy binaria,Analítica (creada en script 04),0 = No indígena; 1 = Indígena; NA = Otra lengua,Construida en 04_clasificar.R a partir de etnia
+indigena_label,Etiqueta legible de variable indigena,Categórica nominal,Analítica (creada en script 04),No indígena / Indígena,Construida en 04_clasificar.R a partir de indigena
+part_indice,Índice de participación en organizaciones (0–5 en esta muestra),Numérica discreta,Dependiente,0 a 5 (máximo teórico: 17),Construida en 01_extraer.R a partir de P801_1 a P801_17 (Módulo 800A)
+part_bin,Participa en al menos una organización (dummy),Dummy binaria,Dependiente (binaria),0 = No participa; 1 = Participa,Construida en 01_extraer.R a partir de indice_participacion
+nivel_participacion,Nivel de participación ciudadana (ordinal),Ordinal,Analítica (creada en script 04),Ninguna / Baja / Alta,Construida en 04_clasificar.R a partir de part_indice
+participa_comunal,Participa en organización comunal/territorial (dummy),Dummy binaria,Analítica (creada en script 04),0 = No participa; 1 = Participa en org. comunal,"Construida en 04_clasificar.R a partir de P801_4, P801_5, P801_14, P801_16"
+educacion,Nivel educativo alcanzado,Ordinal,Control,Sin nivel / Primaria / Secundaria / Superior no universitaria / Superior universitaria o más,"ENAHO 2025 - Módulo 300, variable P301A"
+sexo,Sexo de la persona,Dummy binaria,Control,Hombre / Mujer,"ENAHO 2025 - Módulo 300, variable P207"
+area,Área geográfica de residencia,Dummy binaria,Control,Urbano / Rural,"ENAHO 2025 - Sumaria, variable ESTRATO"
+pobreza,Condición de pobreza del hogar,Ordinal,Control,Pobre extremo / Pobre no extremo / No pobre,"ENAHO 2025 - Sumaria, variable POBREZA"
+edad_grupo,Grupo etario,Ordinal,Control,18-29 / 30-44 / 45-59 / 60 o más,"ENAHO 2025 - Módulo 300, variable P208A (recodificada)"
+factor_exp,Factor de expansión poblacional,Numérica continua,Ponderación,Valor positivo — indica cuántas personas representa en la población,"ENAHO 2025 - Sumaria, variable FACTOR07"
