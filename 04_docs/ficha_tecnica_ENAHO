@@ -1,0 +1,75 @@
+# Ficha Técnica — Encuesta Nacional de Hogares (ENAHO) 2025
+
+## 1. Identificación de la fuente
+
+- **Nombre completo:** Encuesta Nacional de Hogares sobre Condiciones de Vida y Pobreza
+- **Sigla:** ENAHO
+- **Institución productora:** Instituto Nacional de Estadística e Informática (INEI)
+- **Frecuencia:** Anual (desde 1995)
+- **Año utilizado:** 2025
+- **Fecha de acceso:** julio 2025
+- **URL de descarga:** https://iinei.inei.gob.pe/microdatos/
+
+---
+
+## 2. Diseño muestral
+
+- **Tipo de muestreo:** Probabilístico, estratificado, multietápico e independiente en cada departamento
+- **Marco muestral:** Censos Nacionales de Población y Vivienda 2017
+- **Población objetivo:** Hogares particulares y sus miembros residentes habituales en el territorio nacional
+- **Cobertura geográfica:** Nacional, urbana y rural, a nivel de departamento
+- **Tamaño de muestra:** Aproximadamente 37,000 viviendas por año
+- **Panel rotante:** Sí — permite seguimiento longitudinal parcial entre rondas consecutivas
+
+---
+
+## 3. Representatividad
+
+La ENAHO es representativa a nivel:
+- Nacional
+- Área de residencia (urbano / rural)
+- Región natural (Costa, Sierra, Selva)
+- Departamento
+
+**Factor de expansión:** Cada observación tiene un peso estadístico (`FACTOR07`) que indica cuántos hogares o personas reales representa en la población. Todo análisis descriptivo que busque generalizar a la población peruana debe aplicar este factor.
+
+---
+
+## 4. Módulos utilizados en este estudio
+
+| Módulo | Archivo | Contenido relevante |
+|--------|---------|-------------------|
+| Sumaria | `Sumaria-2025-12g.sav` | Condición de pobreza, estrato socioeconómico, factor de expansión |
+| 300 — Educación | `Enaho01A-2025-300_Educacion.sav` | Lengua materna (P300A), nivel educativo (P301A), sexo (P207), edad (P208A) |
+| 800A — Gobernabilidad | `Enaho01-2025-800A.sav` | Participación del hogar en organizaciones (P801_1 a P801_17) |
+| 800B — Gobernabilidad | `Enaho01-2025-800B.sav` | Detalle individual de participación (P803, P804, P805) |
+
+---
+
+## 5. Variable clave: identidad étnica
+
+La ENAHO 2025 incluye una pregunta directa de autoidentificación étnica. Sin embargo, esta variable no se utiliza en el presente estudio por dos limitaciones metodológicas sustantivas:
+
+1. **Problema de autopercepción:** La pregunta registra cómo la persona se percibe a sí misma en el momento de la encuesta, lo cual puede estar influenciado por el contexto de la entrevista, el encuestador y el momento biográfico, más que por una identidad étnica estable.
+
+2. **Sesgo por racismo estructural:** En contextos de discriminación étnica, las personas tienden a no identificarse como indígenas o afrodescendientes y a declararse "mestizas" como estrategia de evasión social. Este fenómeno está documentado en el Perú (Sulmont, 2012) y produce una subestimación sistemática de la población indígena que no es aleatoria — es MNAR (Missing Not at Random en términos de sesgo, no de ausencia).
+
+En su lugar, se utiliza **P300A (lengua materna)** como proxy de identidad étnica.
+
+**Justificación del proxy:** La lengua materna es un indicador más objetivo que la autopercepción porque es un hecho biográfico difícilmente modificable por presión social en el momento de la entrevista. Es ampliamente utilizada en la literatura sobre ciudadanía étnica en contextos andinos (Sulmont, 2012; Tanaka y Vera, 2010).
+
+**Limitación reconocida del proxy:** La lengua materna también puede estar sujeta a ocultamiento en contextos de discriminación — una persona puede declarar castellano como lengua materna aunque haya crecido en un hogar quechuahablante. Adicionalmente, puede subestimar a la población que se identifica como indígena pero que ya no habla la lengua materna de sus ancestros, especialmente en contextos urbanos con alta migración. Ambas variables, por tanto, tienen limitaciones; la decisión de usar lengua materna responde a que su sesgo es menos sistemático que el de la autopercepción bajo racismo estructural.
+
+---
+
+## 6. Limitaciones conocidas de la fuente
+
+- **Alta no respuesta en ingresos:** El módulo de ingresos tiene tasas de no respuesta elevadas, especialmente en rentas y dividendos. No afecta directamente a este estudio.
+- **Comparabilidad entre años:** Cambios metodológicos entre rondas pueden afectar la comparabilidad temporal. Este estudio usa exclusivamente la ronda 2025.
+- **Módulo de gobernabilidad:** El módulo 800 registra participación a nivel de hogar (800A) e individual (800B), pero solo tienen registro en 800B las personas que efectivamente participan, lo que requiere un left_join para conservar a quienes no participan.
+
+---
+
+## 7. Cita de la fuente
+
+Instituto Nacional de Estadística e Informática (INEI). (2025). *Encuesta Nacional de Hogares sobre Condiciones de Vida y Pobreza (ENAHO) 2025*. Lima: INEI. Recuperado de https://iinei.inei.gob.pe/microdatos/
