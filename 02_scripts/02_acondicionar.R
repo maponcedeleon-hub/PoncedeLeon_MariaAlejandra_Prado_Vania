@@ -150,3 +150,50 @@ base_tipada <- base_seleccion %>%
 
 cat("=== TIPOS CORREGIDOS ===\n")
 glimpse(base_tipada)
+
+# =============================================================================
+# 4. DIAGNÓSTICO DE VALORES PERDIDOS
+# Siguiendo la taxonomía MCAR/MAR/MNAR:
+#   - MCAR: ausencia completamente aleatoria → listwise deletion sin sesgo
+#   - MAR: ausencia predecible por otras variables → imputación múltiple
+#   - MNAR: ausencia relacionada con el valor no observado 
+# =============================================================================
+
+# Conteo y porcentaje de NAs por variable
+reporte_nas <- base_tipada %>%
+  summarise(across(everything(), ~ sum(is.na(.)))) %>%
+  pivot_longer(everything(),
+               names_to  = "variable",
+               values_to = "n_na") %>%
+  mutate(
+    total  = nrow(base_tipada),
+    pct_na = round(n_na / total * 100, 2)
+  ) %>%
+  arrange(desc(n_na))
+
+cat("=== REPORTE DE VALORES PERDIDOS ===\n")
+print(reporte_nas)
+
+# Gráfico de NAs
+g_nas <- reporte_nas %>%
+  filter(n_na > 0) %>%
+  ggplot(aes(x = reorder(variable, pct_na), y = pct_na)) +
+  geom_col(fill = "#c0392b") +
+  geom_text(aes(label = paste0(pct_na, "%")),
+            hjust = -0.2, size = 3.5) +
+  coord_flip() +
+  labs(
+    title   = "Figura 1. Porcentaje de valores perdidos por variable",
+    subtitle = "Base acondicionada — ENAHO 2025, personas mayores de 18 años",
+    x       = NULL,
+    y       = "Porcentaje de NAs (%)",
+    caption = "Fuente: ENAHO 2025 - INEI. Elaboración propia."
+  ) +
+  theme_minimal()
+
+ggsave("03_outputs/acondicionar/figura1_reporte_nas.png",
+       plot = g_nas, width = 8, height = 5, dpi = 300)
+
+write_csv(reporte_nas, "03_outputs/acondicionar/tabla1_reporte_nas.csv")
+
+cat("\n✓ Reporte de NAs exportado en 03_outputs/acondicionar/\n")
