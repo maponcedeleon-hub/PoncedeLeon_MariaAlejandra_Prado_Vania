@@ -79,3 +79,61 @@ base <- read_csv("01_datos/procesados/base_acondicionada.csv",
   )
 
 cat(sprintf("Base cargada: %d observaciones\n", nrow(base)))
+
+# =============================================================================
+# 1. VARIABLE: indigena (dummy binaria)
+# =============================================================================
+
+base <- base %>%
+  mutate(
+    indigena = case_when(
+      etnia == "Castellano" ~ 0L,
+      etnia == "Otra"       ~ NA_integer_,  # categoría ambigua, se excluye
+      TRUE                  ~ 1L            # todas las lenguas nativas
+    ),
+    indigena_label = factor(indigena,
+                            levels = c(0, 1),
+                            labels = c("No indígena", "Indígena"))
+  )
+
+# Distribución ponderada
+dist_indigena <- base %>%
+  filter(!is.na(indigena)) %>%
+  group_by(indigena_label) %>%
+  summarise(
+    n           = n(),
+    n_expandido = round(sum(factor_exp))
+  ) %>%
+  mutate(pct = round(n_expandido / sum(n_expandido) * 100, 1))
+
+cat("\n=== Variable 1: indigena ===\n")
+cat("Regla: 1 = lengua materna indígena; 0 = castellano; NA = otra\n")
+cat("Nota: 'Otra' (n=300) excluida por ambigüedad — no es lengua\n")
+cat("      nativa ni castellano claramente\n\n")
+print(dist_indigena)
+write_csv(dist_indigena, "03_outputs/clasificar/tabla_dist_indigena.csv")
+
+# Gráfico
+g_indigena <- ggplot(dist_indigena,
+                     aes(x = indigena_label, y = pct,
+                         fill = indigena_label)) +
+  geom_col(show.legend = FALSE) +
+  geom_text(aes(label = paste0(pct, "%\n(n expandido = ",
+                               format(n_expandido, big.mark = ","), ")")),
+            vjust = -0.3, size = 3.5) +
+  scale_fill_manual(values = c("No indígena" = "#2980b9",
+                               "Indígena"    = "#e67e22")) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.2))) +
+  labs(
+    title    = "Figura 8. Distribución de la variable 'indigena'",
+    subtitle = "Recodificación binaria a partir de lengua materna — ENAHO 2025\n(n muestral = 75,922, excluyendo categoría 'Otra')",
+    x        = NULL,
+    y        = "Porcentaje de la población adulta (%)",
+    caption  = "Fuente: ENAHO 2025 - INEI. Elaboración propia.\nNota: resultados ponderados con factor de expansión FACTOR07."
+  ) +
+  theme_minimal()
+
+ggsave("03_outputs/clasificar/figura8_dist_indigena.png",
+       plot = g_indigena, width = 6, height = 5, dpi = 300)
+
+cat("✓ Variable 'indigena' creada y exportada.\n")
