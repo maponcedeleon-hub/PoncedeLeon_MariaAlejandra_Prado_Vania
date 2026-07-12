@@ -233,10 +233,6 @@ La ficha técnica documenta el diseño muestral de la ENAHO, los módulos utiliz
 Instituto Nacional de Estadística e Informática (INEI). (2025). *Encuesta Nacional de Hogares sobre Condiciones de Vida y Pobreza (ENAHO) 2025*. Lima: INEI. https://iinei.inei.gob.pe/microdatos/
 
 Sulmont, D. (2012). Raza y etnicidad desde las encuestas de opinión: ¿es posible capturar la identidad étnico-racial en el Perú? *Debates en Sociología*, (37), 5–26.
-
 Van Buuren, S. (2018). *Flexible imputation of missing data*. CRC Press.
-
 Van Cott, D. L. (2005). *From movements to parties in Latin America*. Cambridge University Press.
-
 Yashar, D. J. (2005). *Contesting citizenship in Latin America*. Cambridge University Press.
-
