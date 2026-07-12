@@ -137,3 +137,63 @@ ggsave("03_outputs/clasificar/figura8_dist_indigena.png",
        plot = g_indigena, width = 6, height = 5, dpi = 300)
 
 cat("✓ Variable 'indigena' creada y exportada.\n")
+
+# =============================================================================
+# 2. VARIABLE: nivel_participacion 
+# =============================================================================
+
+base <- base %>%
+  mutate(
+    nivel_participacion = case_when(
+      part_indice == 0              ~ "Ninguna",
+      part_indice %in% 1:2          ~ "Baja",
+      part_indice >= 3              ~ "Alta"
+    ),
+    nivel_participacion = factor(nivel_participacion,
+                                 levels = c("Ninguna", "Baja", "Alta"))
+  )
+
+# Distribución ponderada
+dist_nivel <- base %>%
+  group_by(nivel_participacion) %>%
+  summarise(
+    n           = n(),
+    n_expandido = round(sum(factor_exp))
+  ) %>%
+  mutate(pct = round(n_expandido / sum(n_expandido) * 100, 1))
+
+cat("\n=== Variable 2: nivel_participacion ===\n")
+cat("Regla: Ninguna (0) / Baja (1-2 org.) / Alta (3+ org.)\n")
+cat("Justificación del corte en 3: solo el 5.4% participa en 3+\n")
+cat("organizaciones — grupo cualitativamente distinto de alta\n")
+cat("participación cívica múltiple\n\n")
+print(dist_nivel)
+write_csv(dist_nivel,
+          "03_outputs/clasificar/tabla_dist_nivel_participacion.csv")
+
+# Gráfico
+g_nivel <- ggplot(dist_nivel,
+                  aes(x = nivel_participacion, y = pct,
+                      fill = nivel_participacion)) +
+  geom_col(show.legend = FALSE) +
+  geom_text(aes(label = paste0(pct, "%\n(n expandido = ",
+                               format(n_expandido, big.mark = ","), ")")),
+            vjust = -0.3, size = 3.5) +
+  scale_fill_manual(values = c("Ninguna" = "#c0392b",
+                               "Baja"    = "#f39c12",
+                               "Alta"    = "#27ae60")) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.2))) +
+  labs(
+    title    = "Figura 9. Distribución de la variable 'nivel_participacion'",
+    subtitle = sprintf("Recodificación ordinal del índice de participación — ENAHO 2025\n(n muestral = %s)",
+                       format(nrow(base), big.mark = ",")),
+    x        = "Nivel de participación ciudadana",
+    y        = "Porcentaje de la población adulta (%)",
+    caption  = "Fuente: ENAHO 2025 - INEI. Elaboración propia.\nNota: resultados ponderados con factor de expansión FACTOR07."
+  ) +
+  theme_minimal()
+
+ggsave("03_outputs/clasificar/figura9_dist_nivel_participacion.png",
+       plot = g_nivel, width = 7, height = 5, dpi = 300)
+
+cat("✓ Variable 'nivel_participacion' creada y exportada.\n")
