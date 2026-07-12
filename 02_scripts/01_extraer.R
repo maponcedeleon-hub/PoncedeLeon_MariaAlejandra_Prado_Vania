@@ -29,7 +29,7 @@ library(haven)
 # --- Sumaria: variables socioeconómicas del hogar ----------------------------
 # Unidad de análisis: HOGAR
 # Variables seleccionadas: identificadores + pobreza + estrato + factor de expansión
-sumaria <- read_sav("01_datos/originales/Sumaria-2025-12g.sav") %>%
+sumaria <- read_sav("C:/Users/USUARIO/OneDrive/Escritorio/PC3_ENAHO/datos/crudos/Sumaria-2025-12g.sav") %>%
   select(
     CONGLOME, VIVIENDA, HOGAR,
     DOMINIO,     # dominio geográfico
@@ -48,7 +48,7 @@ cat(sprintf("Sumaria cargada: %d hogares\n", nrow(sumaria)))
 #                          sexo + edad
 # Decisión: P300A (lengua materna) se usa como proxy de identidad étnica.
 # Justificación completa en 04_docs/ficha_tecnica_ENAHO.md, sección 5.
-mod300 <- read_sav("01_datos/originales/Enaho01A-2025-300_Educacion.sav") %>%
+mod300 <- read_sav("C:/Users/USUARIO/OneDrive/Escritorio/PC3_ENAHO/datos/crudos/Enaho01A-2025-300_Educación.sav") %>%
   select(
     CONGLOME, VIVIENDA, HOGAR, CODPERSO,
     P300A,   # lengua materna (proxy de identidad étnica)
@@ -64,7 +64,8 @@ cat(sprintf("Módulo 300 cargado: %d personas\n", nrow(mod300)))
 # Cada P801_* indica si alguien del hogar pertenece a ese tipo de organización
 # Decisión: se incluyen P801_1 a P801_17 (tipos de organización) y P801_19
 #           (no pertenece a ninguna, categoría de referencia)
-mod800A <- read_sav("01_datos/originales/Enaho01-2025-800A.sav") %>%
+
+mod800A <- read_sav("C:/Users/USUARIO/OneDrive/Escritorio/PC3_ENAHO/datos/crudos/Enaho01-2025-800A.sav") %>%
   select(
     CONGLOME, VIVIENDA, HOGAR,
     P801_1,   # Clubes y asociaciones deportivas
@@ -94,13 +95,112 @@ cat(sprintf("Módulo 800A cargado: %d hogares\n", nrow(mod800A)))
 # Decisión: solo tienen registro en este módulo las personas que SÍ participan.
 #           Por eso se usa left_join al unir con el módulo 300, para conservar
 #           también a quienes no participan (quedarán con NA en estas variables).
-mod800B <- read_sav("01_datos/originales/Enaho01-2025-800B.sav") %>%
+  
+mod800B <- read_sav("C:/Users/USUARIO/OneDrive/Escritorio/PC3_ENAHO/datos/crudos/Enaho01-2025-800B.sav") %>%
   select(
     CONGLOME, VIVIENDA, HOGAR, CODPERSO,
     P803,    # tipo de organización a la que pertenece
-    P804,    # rol: Dirigente / Miembro activo / Miembro no activo / Otro
+    P804,    # rol: 1=Dirigente, 2=Miembro activo, 3=Miembro no activo, 4=Otro
     P805     # cómo accedió: elección, amistad, designación, pago, afiliación, otro
+  ) %>%
+  # Decisión: algunas personas tienen múltiples registros en 800B porque
+  # participan en más de una organización (hasta 5 registros por persona).
+  # Se conserva el registro con el rol más activo (valor más bajo en P804:
+  # 1=Dirigente > 2=Miembro activo > 3=Miembro no activo > 4=Otro).
+  # Justificación: el perfil de participación más relevante para el análisis
+  # de ciudadanía activa es el rol de mayor involucramiento.
+  group_by(CONGLOME, VIVIENDA, HOGAR, CODPERSO) %>%
+  slice_min(P804, with_ties = FALSE) %>%
+  ungroup()
+
+cat(sprintf("Módulo 800B cargado: %d registros (uno por persona, rol más activo)\n",
+            nrow(mod800B)))
+
+# =============================================================================
+# 2. CONSTRUCCIÓN DEL ÍNDICE DE PARTICIPACIÓN (nivel hogar)
+# Decisión: se construye el índice antes del merge para que quede documentado
+#           como parte de la extracción, no de la clasificación.
+# Lógica: cada P801_* vale 1 si el hogar participa en ese tipo de organización,
+#         0 si no. El índice es la suma de tipos distintos (0 a 17).
+# Justificación: la suma simple es la forma más transparente y auditable de
+#         construir un índice de participación cuando todas las dimensiones
+#         tienen igual peso teórico a priori (ver S14 — decisiones de agregación)
+# =============================================================================
+
+vars_participacion <- paste0("P801_", 1:17)
+
+mod800A <- mod800A %>%
+  mutate(
+    across(
+      all_of(vars_participacion),
+      ~ if_else(. != 0, 1L, 0L)
+    ),
+    indice_participacion = rowSums(across(all_of(vars_participacion)),
+                                   na.rm = TRUE),
+    participa_binario    = if_else(indice_participacion > 0, 1L, 0L)
   )
 
-cat(sprintf("Módulo 800B cargado: %d registros de participación individual\n", nrow(mod800B)))
+cat("Índice de participación construido.\n")
+cat(sprintf("Hogares que participan en al menos una organización: %d (%.1f%%)\n",
+            sum(mod800A$participa_binario),
+            mean(mod800A$participa_binario) * 100))
 
+# =============================================================================
+# 3. MERGE DE MÓDULOS
+# Decisión: se une en dos pasos para mantener claridad sobre las unidades
+#           de análisis en cada join.
+# Paso 1: unión a nivel persona (300 + 800B) → left_join porque 800B solo
+#         tiene registros de quienes participan
+# Paso 2: agregar índice del hogar (800A) → left_join por llaves de hogar
+# Paso 3: agregar variables socioeconómicas (Sumaria) → left_join por hogar
+# Llave de unión: CONGLOME + VIVIENDA + HOGAR + CODPERSO (persona)
+#                 CONGLOME + VIVIENDA + HOGAR (hogar)
+# Fuente: Diccionario de variables ENAHO 2025, INEI
+# =============================================================================
+
+# Paso 1: módulo 300 + 800B (nivel persona)
+base_persona <- mod300 %>%
+  left_join(mod800B,
+            by = c("CONGLOME", "VIVIENDA", "HOGAR", "CODPERSO"))
+
+filas_esperadas <- nrow(mod300)
+filas_obtenidas <- nrow(base_persona)
+
+cat(sprintf("\nPaso 1 — merge 300 + 800B:\n"))
+cat(sprintf("  Filas esperadas: %d (igual que módulo 300)\n", filas_esperadas))
+cat(sprintf("  Filas obtenidas: %d\n", filas_obtenidas))
+if (filas_esperadas != filas_obtenidas) {
+  warning("¡El merge produjo un número inesperado de filas! Revisar duplicados.")
+} else {
+  cat("  ✓ Merge correcto: no hubo duplicación de filas\n")
+}
+
+# Paso 2: agregar índice de participación del hogar (800A)
+base_persona <- base_persona %>%
+  left_join(
+    mod800A %>% select(CONGLOME, VIVIENDA, HOGAR,
+                       indice_participacion, participa_binario,
+                       all_of(vars_participacion)),
+    by = c("CONGLOME", "VIVIENDA", "HOGAR")
+  )
+
+cat(sprintf("\nPaso 2 — agregar 800A:\n"))
+cat(sprintf("  Filas después del merge: %d\n", nrow(base_persona)))
+
+# Paso 3: agregar Sumaria
+base_unida <- base_persona %>%
+  left_join(sumaria,
+            by = c("CONGLOME", "VIVIENDA", "HOGAR"))
+
+cat(sprintf("\nPaso 3 — agregar Sumaria:\n"))
+cat(sprintf("  Filas finales: %d\n", nrow(base_unida)))
+cat(sprintf("  Variables: %d\n", ncol(base_unida)))
+
+# =============================================================================
+# 4. EXPORTAR BASE UNIDA (sin modificaciones — dato crudo unido)
+# =============================================================================
+
+write_csv(base_unida, "01_datos/procesados/base_unida.csv")
+
+cat("\n✓ Base unida exportada en 01_datos/procesados/base_unida.csv\n")
+cat("  Próximo paso: acondicionar en 02_scripts/02_acondicionar.R\n")
