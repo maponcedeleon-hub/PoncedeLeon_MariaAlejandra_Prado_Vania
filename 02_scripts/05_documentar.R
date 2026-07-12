@@ -139,3 +139,91 @@ cat("\n=== CODEBOOK ===\n")
 print(codebook)
 write_csv(codebook, "03_outputs/documentar/codebook.csv")
 cat("✓ Codebook exportado.\n")
+
+# =============================================================================
+# 2. FRECUENCIAS POR VARIABLE
+# Codebook: distribución de cada variable
+# =============================================================================
+
+cat("\n=== FRECUENCIAS POR VARIABLE ===\n")
+
+# Variables categóricas y ordinales
+vars_categoricas <- c("etnia", "indigena_label", "nivel_participacion",
+                      "educacion", "sexo", "area", "pobreza", "edad_grupo")
+
+frecuencias <- map(vars_categoricas, function(var) {
+  base %>%
+    group_by(valor = .data[[var]]) %>%
+    summarise(
+      n           = n(),
+      n_expandido = round(sum(factor_exp)),
+      .groups     = "drop"
+    ) %>%
+    mutate(
+      variable = var,
+      pct      = round(n_expandido / sum(n_expandido) * 100, 1)
+    ) %>%
+    select(variable, valor, n, n_expandido, pct)
+}) %>%
+  bind_rows()
+
+print(frecuencias)
+write_csv(frecuencias,
+          "03_outputs/documentar/tabla_frecuencias_variables.csv")
+
+# Variables numéricas: estadísticos descriptivos ponderados
+cat("\n=== ESTADÍSTICOS DESCRIPTIVOS PONDERADOS ===\n")
+
+estadisticos_num <- tibble(
+  variable = c("part_indice", "part_bin", "participa_comunal",
+               "indigena", "factor_exp"),
+  media_ponderada = c(
+    weighted.mean(base$part_indice,       w = base$factor_exp),
+    weighted.mean(base$part_bin,          w = base$factor_exp),
+    weighted.mean(base$participa_comunal, w = base$factor_exp),
+    weighted.mean(base$indigena,          w = base$factor_exp,
+                  na.rm = TRUE),
+    mean(base$factor_exp)
+  ),
+  mediana = c(
+    median(base$part_indice),
+    median(base$part_bin),
+    median(base$participa_comunal),
+    median(base$indigena, na.rm = TRUE),
+    median(base$factor_exp)
+  ),
+  minimo = c(
+    min(base$part_indice),
+    min(base$part_bin),
+    min(base$participa_comunal),
+    min(base$indigena, na.rm = TRUE),
+    min(base$factor_exp)
+  ),
+  maximo = c(
+    max(base$part_indice),
+    max(base$part_bin),
+    max(base$participa_comunal),
+    max(base$indigena, na.rm = TRUE),
+    max(base$factor_exp)
+  )
+) %>%
+  mutate(across(where(is.numeric), ~ round(., 3)))
+
+print(estadisticos_num)
+write_csv(estadisticos_num,
+          "03_outputs/documentar/tabla_estadisticos_numericos.csv")
+
+# =============================================================================
+# 3. REPORTE SKIMR
+# =============================================================================
+
+cat("\n=== REPORTE SKIMR ===\n")
+reporte_skim <- skim(base)
+print(reporte_skim)
+
+reporte_skim %>%
+  as_tibble() %>%
+  write_csv("03_outputs/documentar/reporte_skim.csv")
+
+cat("✓ Frecuencias y reporte estadístico exportados.\n")
+

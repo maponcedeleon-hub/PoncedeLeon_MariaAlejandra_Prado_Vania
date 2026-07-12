@@ -1,0 +1,18 @@
+skim_type,skim_variable,n_missing,complete_rate,character.min,character.max,character.empty,character.n_unique,character.whitespace,factor.ordered,factor.n_unique,factor.top_counts,numeric.mean,numeric.sd,numeric.p0,numeric.p25,numeric.p50,numeric.p75,numeric.p100,numeric.hist
+character,CONGLOME,0,1,6,6,0,5359,0,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
+character,VIVIENDA,0,1,3,3,0,527,0,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
+character,CODPERSO,0,1,2,2,0,14,0,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
+factor,etnia,0,1,NA,NA,NA,NA,NA,FALSE,11,"Cas: 58948, Que: 13927, Aim: 1902, Otr: 337",NA,NA,NA,NA,NA,NA,NA,NA
+factor,indigena_label,300,0.9960641284668469,NA,NA,NA,NA,NA,FALSE,2,"No : 58948, Ind: 16974",NA,NA,NA,NA,NA,NA,NA,NA
+factor,nivel_participacion,0,1,NA,NA,NA,NA,NA,FALSE,3,"Nin: 48923, Baj: 26363, Alt: 936",NA,NA,NA,NA,NA,NA,NA,NA
+factor,educacion,0,1,NA,NA,NA,NA,NA,FALSE,5,"Sec: 28604, Pri: 18858, Sup: 13502, Sup: 10804",NA,NA,NA,NA,NA,NA,NA,NA
+factor,sexo,0,1,NA,NA,NA,NA,NA,FALSE,2,"Muj: 40250, Hom: 35972",NA,NA,NA,NA,NA,NA,NA,NA
+factor,area,0,1,NA,NA,NA,NA,NA,FALSE,2,"Urb: 56299, Rur: 19923",NA,NA,NA,NA,NA,NA,NA,NA
+factor,pobreza,0,1,NA,NA,NA,NA,NA,FALSE,3,"No : 61380, Pob: 11992, Pob: 2850",NA,NA,NA,NA,NA,NA,NA,NA
+factor,edad_grupo,0,1,NA,NA,NA,NA,NA,FALSE,4,"30-: 20099, 60 : 20079, 45-: 19363, 18-: 16681",NA,NA,NA,NA,NA,NA,NA,NA
+numeric,HOGAR,0,1,NA,NA,NA,NA,NA,NA,NA,NA,11.137086405499725,1.3604640440671931,11,11,11,11,55,▇▁▁▁▁
+numeric,indigena,300,0.9960641284668469,NA,NA,NA,NA,NA,NA,NA,NA,0.22357156028555622,0.41664085749883695,0,0,0,0,1,▇▁▁▁▂
+numeric,part_indice,0,1,NA,NA,NA,NA,NA,NA,NA,NA,0.447285560599302,0.6765483002200517,0,0,0,1,5,▇▁▁▁▁
+numeric,part_bin,0,1,NA,NA,NA,NA,NA,NA,NA,NA,0.3581511899451602,0.47946004112805957,0,0,0,1,1,▇▁▁▁▅
+numeric,participa_comunal,0,1,NA,NA,NA,NA,NA,NA,NA,NA,0.24267271916244654,0.42870162318134747,0,0,0,0,1,▇▁▁▁▂
+numeric,factor_exp,0,1,NA,NA,NA,NA,NA,NA,NA,NA,331.0369395533063,335.9358243428435,1.6645700931549072,129.02781677246094,246.51165771484375,383.9812927246094,1845.740966796875,▇▂▁▁▁

@@ -1,0 +1,34 @@
+variable,valor,n,n_expandido,pct
+etnia,Castellano,58948,20093870,79.6
+etnia,Quechua,13927,4387513,17.4
+etnia,Aimara,1902,500944,2
+etnia,Otra lengua nativa,337,46462,0.2
+etnia,Ashaninka,233,29513,0.1
+etnia,Awajun/Aguaruna,311,35099,0.1
+etnia,Shipibo-Konibo,125,20539,0.1
+etnia,Shawi/Chayahuita,61,9399,0
+etnia,Matsigenka/Machiguenga,41,7317,0
+etnia,Achuar,37,8044,0
+etnia,Otra,300,93599,0.4
+indigena_label,No indígena,58948,20093870,79.6
+indigena_label,Indígena,16974,5044829,20
+indigena_label,NA,300,93599,0.4
+nivel_participacion,Ninguna,48923,18251040,72.3
+nivel_participacion,Baja,26363,6771525,26.8
+nivel_participacion,Alta,936,209732,0.8
+educacion,Sin nivel / Inicial,4454,1285953,5.1
+educacion,Primaria,18858,5505006,21.8
+educacion,Secundaria,28604,10169743,40.3
+educacion,Superior no universitaria,10804,3712763,14.7
+educacion,Superior universitaria o más,13502,4558833,18.1
+sexo,Hombre,35972,11865301,47
+sexo,Mujer,40250,13366996,53
+area,Urbano,56299,21443855,85
+area,Rural,19923,3788443,15
+pobreza,Pobre extremo,2850,946113,3.7
+pobreza,Pobre no extremo,11992,4629350,18.3
+pobreza,No pobre,61380,19656835,77.9
+edad_grupo,18-29,16681,5761470,22.8
+edad_grupo,30-44,20099,6617790,26.2
+edad_grupo,45-59,19363,6414393,25.4
+edad_grupo,60 o más,20079,6438645,25.5
