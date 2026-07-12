@@ -123,3 +123,95 @@ tabla_pobreza <- base %>%
 write_csv(tabla_pobreza, "03_outputs/explorar/tabla7_dist_pobreza.csv")
 
 cat("✓ Tablas univariadas exportadas en 03_outputs/explorar/\n")
+
+# =============================================================================
+# 2. GRÁFICOS UNIVARIADOS
+# =============================================================================
+
+n_total <- nrow(base)
+subtitulo_base <- sprintf("ENAHO 2025 — personas de 18 años o más (n muestral = %s)",
+                          format(n_total, big.mark = ","))
+
+# --- Figura 2: distribución del índice de participación ----------------------
+g2 <- ggplot(base, aes(x = factor(part_indice),
+                       weight = factor_exp / sum(factor_exp) * 100)) +
+  geom_bar(fill = "#2c3e50") +
+  labs(
+    title    = "Figura 2. Distribución del índice de participación ciudadana",
+    subtitle = subtitulo_base,
+    x        = "Número de tipos de organización en los que participa el hogar\n(0 = ninguna, máximo = 17)",
+    y        = "Porcentaje de la población adulta (%)",
+    caption  = "Fuente: ENAHO 2025 - INEI. Elaboración propia.\nNota: resultados ponderados con factor de expansión FACTOR07."
+  ) +
+  theme_minimal()
+
+ggsave("03_outputs/explorar/figura2_dist_participacion.png",
+       plot = g2, width = 8, height = 5, dpi = 300)
+
+# --- Figura 3: distribución por identidad étnica -----------------------------
+# Decisión: se agrupa lenguas amazónicas poco frecuentes en "Otras lenguas
+# nativas" para mejorar la legibilidad del gráfico sin perder información
+# analítica relevante. Las categorías individuales están en tabla3.
+
+tabla_etnia_grafico <- base %>%
+  mutate(
+    etnia_agrupada = case_when(
+      etnia == "Castellano"        ~ "Castellano",
+      etnia == "Quechua"           ~ "Quechua",
+      etnia == "Aimara"            ~ "Aimara",
+      etnia %in% c("Otra lengua nativa", "Ashaninka", "Awajun/Aguaruna",
+                   "Shipibo-Konibo", "Shawi/Chayahuita", "Achuar",
+                   "Matsigenka/Machiguenga") ~ "Otras lenguas nativas",
+      TRUE ~ "Otra"
+    ),
+    etnia_agrupada = factor(etnia_agrupada,
+                            levels = c("Castellano", "Quechua", "Aimara",
+                                       "Otras lenguas nativas", "Otra"))
+  ) %>%
+  group_by(etnia_agrupada) %>%
+  summarise(
+    n           = n(),
+    n_expandido = round(sum(factor_exp))
+  ) %>%
+  mutate(pct = round(n_expandido / sum(n_expandido) * 100, 1))
+
+g3 <- ggplot(tabla_etnia_grafico,
+             aes(x = reorder(etnia_agrupada, -pct), y = pct)) +
+  geom_col(fill = "#2980b9") +
+  geom_text(aes(label = paste0(pct, "%")), vjust = -0.5, size = 3.5) +
+  labs(
+    title    = "Figura 3. Distribución de la población adulta por lengua materna",
+    subtitle = subtitulo_base,
+    x        = "Lengua materna (proxy de identidad étnica)",
+    y        = "Porcentaje de la población adulta (%)",
+    caption  = "Fuente: ENAHO 2025 - INEI. Elaboración propia.\nNota: resultados ponderados con factor de expansión FACTOR07.\nLas lenguas amazónicas individuales se muestran en Tabla 3."
+  ) +
+  theme_minimal()
+
+ggsave("03_outputs/explorar/figura3_dist_etnia.png",
+       plot = g3, width = 8, height = 5, dpi = 300)
+
+# --- Figura 4: distribución por nivel educativo ------------------------------
+tabla_educ_orden <- base %>%
+  group_by(educacion) %>%
+  summarise(n_expandido = round(sum(factor_exp))) %>%
+  mutate(pct = round(n_expandido / sum(n_expandido) * 100, 1))
+
+g4 <- ggplot(tabla_educ_orden, aes(x = educacion, y = pct)) +
+  geom_col(fill = "#8e44ad") +
+  geom_text(aes(label = paste0(pct, "%")), vjust = -0.5, size = 3.5) +
+  labs(
+    title    = "Figura 4. Distribución de la población adulta por nivel educativo",
+    subtitle = subtitulo_base,
+    x        = "Nivel educativo alcanzado",
+    y        = "Porcentaje de la población adulta (%)",
+    caption  = "Fuente: ENAHO 2025 - INEI. Elaboración propia.\nNota: resultados ponderados con factor de expansión FACTOR07."
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 20, hjust = 1))
+
+ggsave("03_outputs/explorar/figura4_dist_educacion.png",
+       plot = g4, width = 8, height = 5, dpi = 300)
+
+cat("✓ Gráficos univariados exportados en 03_outputs/explorar/\n")
+
