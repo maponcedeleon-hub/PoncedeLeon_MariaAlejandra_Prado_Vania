@@ -51,3 +51,6 @@ rsconnect/
 
 # Datos originales ENAHO
 01_datos/originales/
+
+# Permitir instrucciones de descarga dentro de carpeta ignorada
+!01_datos/originales/INSTRUCCIONES_DESCARGA.md
