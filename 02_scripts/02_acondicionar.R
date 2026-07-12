@@ -77,3 +77,76 @@ cat("=== VARIABLES SELECCIONADAS Y RENOMBRADAS ===\n")
 cat(sprintf("Variables en base seleccionada: %d\n", ncol(base_seleccion)))
 cat(sprintf("Observaciones: %d\n", nrow(base_seleccion)))
 names(base_seleccion)
+
+# =============================================================================
+# 3. CORRECCIÓN DE TIPOS DE DATO
+# Decisión: las variables categóricas importadas como numérico se convierten
+#           a factor con etiquetas legibles.
+# Problema detectado en glimpse(): etnia, educacion, sexo, area y pobreza
+#           llegaron como <dbl> porque SPSS almacena categorías como números.
+#           Si no se corrigen, R las tratará como variables continuas en
+#           gráficos y modelos, produciendo resultados incorrectos.
+# =============================================================================
+
+base_tipada <- base_seleccion %>%
+  mutate(
+    
+    # etnia: lengua materna como proxy de identidad étnica
+    # Fuente de etiquetas: diccionario ENAHO 2025, variable P300A
+    etnia = case_when(
+      etnia == 1  ~ "Quechua",
+      etnia == 2  ~ "Aimara",
+      etnia == 3  ~ "Otra lengua nativa",
+      etnia == 4  ~ "Castellano",
+      etnia == 10 ~ "Ashaninka",
+      etnia == 11 ~ "Awajun/Aguaruna",
+      etnia == 12 ~ "Shipibo-Konibo",
+      etnia == 13 ~ "Shawi/Chayahuita",
+      etnia == 14 ~ "Matsigenka/Machiguenga",
+      etnia == 15 ~ "Achuar",
+      TRUE        ~ "Otra"
+    ),
+    # Decisión: se agrupa en 5 categorías para el análisis:
+    # castellano vs. lenguas indígenas (quechua, aimara, otras nativas amazónicas)
+    etnia = factor(etnia,
+                   levels = c("Castellano", "Quechua", "Aimara",
+                              "Otra lengua nativa", "Ashaninka",
+                              "Awajun/Aguaruna", "Shipibo-Konibo",
+                              "Shawi/Chayahuita", "Matsigenka/Machiguenga",
+                              "Achuar", "Otra")),
+    
+    # educacion: nivel educativo alcanzado
+    # Fuente de etiquetas: diccionario ENAHO 2025, variable P301A
+    educacion = case_when(
+      educacion %in% 1:2 ~ "Sin nivel / Inicial",
+      educacion %in% 3:4 ~ "Primaria",
+      educacion %in% 5:6 ~ "Secundaria",
+      educacion %in% 7:8 ~ "Superior no universitaria",
+      educacion %in% 9:11 ~ "Superior universitaria o más",
+      TRUE ~ NA_character_
+    ),
+    educacion = factor(educacion,
+                       levels = c("Sin nivel / Inicial", "Primaria",
+                                  "Secundaria", "Superior no universitaria",
+                                  "Superior universitaria o más")),
+    
+    # sexo
+    sexo = factor(if_else(sexo == 1, "Hombre", "Mujer")),
+    
+    # area: urbano/rural a partir del estrato
+    # Decisión: estratos 1-6 = Urbano, estratos 7-8 = Rural
+    # Fuente: metodología ENAHO, clasificación de estratos del INEI
+    area = factor(if_else(area %in% 7:8, "Rural", "Urbano"),
+                  levels = c("Urbano", "Rural")),
+    
+    # pobreza
+    pobreza = factor(case_when(
+      pobreza == 1 ~ "Pobre extremo",
+      pobreza == 2 ~ "Pobre no extremo",
+      pobreza == 3 ~ "No pobre"
+    ),
+    levels = c("Pobre extremo", "Pobre no extremo", "No pobre"))
+  )
+
+cat("=== TIPOS CORREGIDOS ===\n")
+glimpse(base_tipada)
